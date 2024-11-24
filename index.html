@@ -34,6 +34,19 @@
             margin-top: 20px;
             text-align: center;
         }
+        .controls p {
+            line-height: 2;
+            font-size: 14px;
+            text-align: center;
+            color: #fff;
+            text-shadow: 0 0 5px #33ff33;
+        }
+
+        .controls span {
+            font-size: 16px;
+            text-shadow: 0 0 5px #33ff33;
+            margin: 0 5px;
+        }
         .stats {
             display: flex;
             gap: 20px;
@@ -131,7 +144,11 @@
         <canvas id="tetris" width="240" height="400"></canvas>
         
         <div class="controls">
-            <p>Controls: ←→ to move, ↑ to rotate, ↓ for soft drop</p>
+            <p>CONTROLS:<br>
+                <span style="color: #33ff33">&larr;&rarr;</span> MOVE  
+                <span style="color: #33ff33">&uarr;</span> ROTATE  
+                <span style="color: #33ff33">&darr;</span> DROP  
+            </p>
         </div>
         <div id="mobile-controls">
             <div class="control-row">
