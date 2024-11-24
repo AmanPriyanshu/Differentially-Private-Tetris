@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>DP Tetris - Leaderboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            background-color: #1a1a1a;
+            color: #ffffff;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #33ff33;
+            text-shadow: 0 0 5px #33ff33;
+            margin-bottom: 40px;
+        }
+
+        .section {
+            background: #2a2a2a;
+            border: 2px solid #33ff33;
+            box-shadow: 0 0 10px rgba(51, 255, 51, 0.3);
+            padding: 25px;
+            margin: 30px 0;
+            border-radius: 5px;
+        }
+
+        .leaderboard-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+
+        .leaderboard-table th, 
+        .leaderboard-table td {
+            padding: 15px;
+            text-align: center;
+            border-bottom: 1px solid #33ff33;
+        }
+
+        .leaderboard-table th {
+            color: #33ff33;
+            text-shadow: 0 0 5px #33ff33;
+            font-size: 1.1em;
+        }
+
+        .leaderboard-table tbody tr:hover {
+            background: rgba(51, 255, 51, 0.1);
+        }
+
+        .rank {
+            font-weight: bold;
+            color: #33ff33;
+        }
+
+        .difficulty-easy { color: #33ff33; }
+        .difficulty-medium { color: #ffff33; }
+        .difficulty-hard { color: #ff3333; }
+
+        .back-button {
+            display: inline-block;
+            padding: 15px 30px;
+            background: #2a2a2a;
+            border: 2px solid #ffffff;
+            color: #ffffff;
+            text-decoration: none;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+            border-radius: 5px;
+            margin-top: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .back-button:hover {
+            transform: scale(1.05);
+            background: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>DP Tetris Leaderboard</h1>
+
+        <div class="section">
+            <table class="leaderboard-table">
+                <thead>
+                    <tr>
+                        <th>Rank</th>
+                        <th>Name</th>
+                        <th>Score</th>
+                        <th>Difficulty</th>
+                        <th>Privacy Budget Used</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="rank">1</td>
+                        <td>Aman</td>
+                        <td>100</td>
+                        <td class="difficulty-hard">HARD</td>
+                        <td>9.8/10</td>
+                    </tr>
+                    <tr>
+                        <td class="rank">2</td>
+                        <td>Blank</td>
+                        <td>0</td>
+                        <td class="difficulty-hard">Hard</td>
+                        <td>10/10</td>
+                    </tr>
+                    <tr>
+                        <td class="rank">3</td>
+                        <td>Blank</td>
+                        <td>0</td>
+                        <td class="difficulty-medium">MEDIUM</td>
+                        <td>100/100</td>
+                    </tr>
+                    <tr>
+                        <td class="rank">4</td>
+                        <td>Blank</td>
+                        <td>0</td>
+                        <td class="difficulty-easy">Easy</td>
+                        <td>150/150</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div style="text-align: center;">
+                <a href="index.html" class="back-button">Back to Game</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

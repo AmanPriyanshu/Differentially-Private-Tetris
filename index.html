@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Differentially Private Tetris - Learn & Play</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/seedrandom/3.0.5/seedrandom.min.js"></script>
+    <style>
+        body {
+            background-color: #1a1a1a;
+            color: #ffffff;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .explanation ul {
+            margin: 10px 0;
+            padding-left: 25px;
+        }
+
+        .explanation ul ul {
+            margin: 5px 0;
+            padding-left: 20px;
+        }
+
+        .explanation li {
+            margin: 5px 0;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #33ff33;
+            text-shadow: 0 0 5px #33ff33;
+            margin-bottom: 40px;
+        }
+
+        .section {
+            background: #2a2a2a;
+            border: 2px solid #33ff33;
+            box-shadow: 0 0 10px rgba(51, 255, 51, 0.3);
+            padding: 25px;
+            margin: 30px 0;
+            border-radius: 5px;
+        }
+
+        h2 {
+            color: #33ff33;
+            margin-bottom: 20px;
+        }
+
+        .grid-container {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+
+        .grid-item {
+            text-align: center;
+        }
+
+        .label {
+            margin: 10px 0;
+            color: #33ff33;
+        }
+
+        canvas {
+            border: 2px solid #33ff33;
+            background: #1a1a1a;
+            box-shadow: 0 0 10px rgba(51, 255, 51, 0.3);
+        }
+
+        .controls {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 10px 0;
+        }
+
+        input[type="range"] {
+            width: 200px;
+            margin: 0 10px;
+        }
+
+        button {
+            padding: 10px 20px;
+            background: #2a2a2a;
+            border: 2px solid #33ff33;
+            color: #33ff33;
+            cursor: pointer;
+            box-shadow: 0 0 5px rgba(51, 255, 51, 0.3);
+            font-size: 16px;
+        }
+
+        button:hover {
+            background: #333;
+            box-shadow: 0 0 10px rgba(51, 255, 51, 0.5);
+        }
+
+        .difficulty-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin: 40px 0;
+            flex-wrap: wrap;
+        }
+
+        .game-button {
+            padding: 20px 30px;
+            font-size: 1.2em;
+            border: 3px solid;
+            background: #2a2a2a;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            min-width: 200px;
+            text-align: center;
+        }
+
+        .leaderboard {
+            color: #ffffff;
+            border-color: #ffffff;
+            box-shadow: 0 0 10px #ffffff;
+        }
+
+        .easy {
+            color: #33ff33;
+            border-color: #33ff33;
+            box-shadow: 0 0 10px #33ff33;
+        }
+
+        .medium {
+            color: #ffff33;
+            border-color: #ffff33;
+            box-shadow: 0 0 10px #ffff33;
+        }
+
+        .hard {
+            color: #ff3333;
+            border-color: #ff3333;
+            box-shadow: 0 0 10px #ff3333;
+        }
+
+        .game-button:hover {
+            transform: scale(1.05);
+            background: #333;
+        }
+
+        .privacy-meter {
+            display: block;
+            font-size: 0.9em;
+            margin-top: 10px;
+            opacity: 0.9;
+        }
+
+        .explanation {
+            margin: 20px 0;
+            line-height: 1.6;
+        }
+
+        .highlight {
+            color: #33ff33;
+            text-shadow: 0 0 2px #33ff33;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Differentially Private Tetris</h1>
+
+        <div class="difficulty-buttons">
+            <a href="easy.html" class="game-button easy">
+                EASY MODE
+                <span class="privacy-meter">Max Budget=150</span>
+            </a>
+            <a href="medium.html" class="game-button medium">
+                MEDIUM MODE
+                <span class="privacy-meter">Max Budget=100</span>
+            </a>
+            <a href="hard.html" class="game-button hard">
+                HARD MODE
+                <span class="privacy-meter">Max Budget=10</span>
+            </a>
+            <a href="leaderboard.html" class="game-button leaderboard">
+                LEADERBOARD
+                <span class="privacy-meter">High Scores</span>
+            </a>
+        </div>
+        <div class="section">
+            <h2>What is Differential Privacy?</h2>
+            <div class="explanation">
+                Differential Privacy (DP) is a mathematical framework that guarantees privacy by adding noise to data. Think of it like wearing a mask - the more noise you add, the harder it is to identify individual features, but you can still understand what's going on!
+                <br><br>
+                The privacy parameter epsilon controls how much noise we add:<br>
+                <ul>
+                    <li>Lower epsilon = More Privacy = More Noise</li>
+                    <li>Higher epsilon = Less Privacy = Less Noise</li>
+                </ul>
+                <br>
+                <i>* Also we'll be maintaining a leaderboard for this based on screenshots!</i>
+            </div>
+        </div>
+        <div class="section">
+            <h2>What is Randomized Response?</h2>
+            <div class="explanation">
+                Randomized Response is a simple yet powerful DP technique. Imagine someone asking you a personal yes/no question:
+                <br><br>
+                <ul>
+                    <li>Step 1: Flip a coin</li>
+                    <li>Step 2: If HEADS (p%), Tell the truth</li>
+                    <li>Step 3: If TAILS (1-p%), Flip again and:</li>
+                    <ul>
+                        <li>Second HEADS: Say "Yes"</li>
+                        <li>Second TAILS: Say "No"</li>
+                    </ul>
+                </ul>
+                <br>
+                This gives you "plausible deniability" - nobody knows if your answer came from the coin or the truth!
+                <br><br>
+                The probability p is related to epsilon:<br>
+                <ul>
+                    <li>epsilon = 0: p = 0% (complete privacy)</li>
+                    <li>epsilon = log(3): p = 50% (some privacy)</li>
+                </ul>
+            </div>
+        </div>
+        <div class="section">
+            <h2>What is our DP-Tetris-Block Lens?</h2>
+            <div class="explanation">
+                We apply Randomized Response to each square of the Tetris block:
+                <br><br>
+                <ul>
+                    <li>For each cell position (Using RR):</li>
+                    <ul>
+                        <li>Show true block?</li>
+                        <li>If showing but not true, what color?</li>
+                    </ul>
+                    <br>
+                    <li>Privacy Budget:</li>
+                    <ul>
+                        <li>Each peek costs epsilon</li>
+                        <li>Higher epsilon = Clearer view</li>
+                        <li>Lower epsilon = More uncertainty</li>
+                    </ul>
+                </ul>
+                <br>
+                Try moving the epsilon slider below to see how privacy affects block visibility. Watch how individual squares might change or disappear, making it harder to determine the true block shape!
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Understanding our DP-Lens</h2>
+            <div class="explanation">
+                In this game, we protect the privacy of each falling Tetris block using 
+                <span class="highlight">Differential Privacy (DP)</span>. The more privacy you want, 
+                the harder it gets to see the blocks clearly!
+            </div>
+            
+            <div class="grid-container">
+                <div class="grid-item">
+                    <div class="label">Original Block</div>
+                    <canvas id="originalCanvas" width="200" height="200"></canvas>
+                </div>
+                <div class="grid-item">
+                    <div class="label">DP Protected Block</div>
+                    <canvas id="dpCanvas" width="200" height="200"></canvas>
+                </div>
+            </div>
+
+            <div class="controls">
+                <div class="slider-container">
+                    <label>Privacy Level (Epsilon): </label>
+                    <input type="range" id="epsilon" min="0.1" max="5" step="0.1" value="1">
+                    <span id="epsilonValue">1.0</span>
+                </div>
+                <button id="generate">Generate New Block</button>
+            </div>
+
+            <div class="explanation">
+                <span class="highlight">Higher Epsilon</span> = Less Privacy, Clearer Blocks<br>
+                <span class="highlight">Lower Epsilon</span> = More Privacy, Harder to See
+            </div>
+        </div>
+
+        <div class="difficulty-buttons">
+            <a href="easy.html" class="game-button easy">
+                EASY MODE
+                <span class="privacy-meter">Max Budget=150</span>
+            </a>
+            <a href="medium.html" class="game-button medium">
+                MEDIUM MODE
+                <span class="privacy-meter">Max Budget=100</span>
+            </a>
+            <a href="hard.html" class="game-button hard">
+                HARD MODE
+                <span class="privacy-meter">Max Budget=10</span>
+            </a>
+            <a href="leaderboard.html" class="game-button leaderboard">
+                LEADERBOARD
+                <span class="privacy-meter">High Scores</span>
+            </a>
+        </div>
+    </div>
+
+    <script>
+        const SHAPES = [
+            [[1, 1, 1, 1]], 
+            [[1, 1], [1, 1]], 
+            [[1, 1, 1], [0, 1, 0]], 
+            [[1, 1, 1], [1, 0, 0]], 
+            [[1, 1, 1], [0, 0, 1]], 
+            [[1, 1, 0], [0, 1, 1]], 
+            [[0, 1, 1], [1, 1, 0]], 
+        ];
+
+        const COLORS = [
+            '#00f0f0', 
+            '#f0f000', 
+            '#a000f0', 
+            '#f0a000', 
+            '#0000f0', 
+            '#00f000', 
+            '#f00000', 
+        ];
+
+        class BlockGenerator {
+            constructor() {
+                this.originalCanvas = document.getElementById('originalCanvas');
+                this.dpCanvas = document.getElementById('dpCanvas');
+                this.originalCtx = this.originalCanvas.getContext('2d');
+                this.dpCtx = this.dpCanvas.getContext('2d');
+                this.blockSize = 40;
+                this.gridSize = 4;
+                this.blockId = 0;
+            }
+
+            generateBlock() {
+                const shapeIdx = Math.floor(Math.random() * SHAPES.length);
+                const colorIdx = Math.floor(Math.random() * COLORS.length);
+                return {
+                    shape: SHAPES[shapeIdx],
+                    color: COLORS[colorIdx],
+                    shapeIdx,
+                    colorIdx
+                };
+            }
+
+            randomizedResponse(value, epsilon, salt) {
+                const seed = `block_${this.blockId}_${value}_${epsilon}_${salt}`;
+                const random = new Math.seedrandom(seed)();
+                const p = Math.exp(epsilon) / (1 + Math.exp(epsilon));
+                return random < p ? value : random < 0.5;
+            }
+
+            randomizedColor(colorIdx, epsilon, salt) {
+                const seed = `color_${this.blockId}_${colorIdx}_${epsilon}_${salt}`;
+                const random = new Math.seedrandom(seed)();
+                const p = Math.exp(epsilon) / (1 + Math.exp(epsilon));
+                return random < p ? colorIdx : Math.floor(random * COLORS.length);
+            }
+
+            drawGrid(ctx) {
+                ctx.clearRect(0, 0, this.originalCanvas.width, this.originalCanvas.height);
+                
+                ctx.strokeStyle = '#333';
+                for (let i = 0; i <= this.gridSize; i++) {
+                    ctx.beginPath();
+                    ctx.moveTo(i * this.blockSize, 0);
+                    ctx.lineTo(i * this.blockSize, this.gridSize * this.blockSize);
+                    ctx.stroke();
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(0, i * this.blockSize);
+                    ctx.lineTo(this.gridSize * this.blockSize, i * this.blockSize);
+                    ctx.stroke();
+                }
+            }
+
+            drawBlock(block, epsilon = Infinity) {
+                this.blockId++;
+                this.drawGrid(this.originalCtx);
+                this.drawGrid(this.dpCtx);
+
+                const grid = Array(this.gridSize).fill().map(() => Array(this.gridSize).fill(0));
+                const startY = Math.floor((this.gridSize - block.shape.length) / 2);
+                const startX = Math.floor((this.gridSize - block.shape[0].length) / 2);
+
+                for (let y = 0; y < block.shape.length; y++) {
+                    for (let x = 0; x < block.shape[y].length; x++) {
+                        if (block.shape[y][x]) {
+                            grid[startY + y][startX + x] = 1;
+                        }
+                    }
+                }
+
+                for (let y = 0; y < this.gridSize; y++) {
+                    for (let x = 0; x < this.gridSize; x++) {
+                        if (grid[y][x]) {
+                            this.originalCtx.fillStyle = block.color;
+                            this.originalCtx.fillRect(
+                                x * this.blockSize + 1,
+                                y * this.blockSize + 1,
+                                this.blockSize - 2,
+                                this.blockSize - 2
+                            );
+                        }
+                    }
+                }
+                for (let y = 0; y < this.gridSize; y++) {
+                    for (let x = 0; x < this.gridSize; x++) {
+                        const shouldFill = this.randomizedResponse(grid[y][x], epsilon, `${x}_${y}`);
+                        if (shouldFill) {
+                            const colorIdx = this.randomizedColor(block.colorIdx, epsilon, `${x}_${y}`);
+                            this.dpCtx.fillStyle = COLORS[colorIdx];
+                            this.dpCtx.fillRect(
+                                x * this.blockSize + 1,
+                                y * this.blockSize + 1,
+                                this.blockSize - 2,
+                                this.blockSize - 2
+                            );
+                        }
+                    }
+                }
+            }
+        }
+        const generator = new BlockGenerator();
+        let currentBlock = generator.generateBlock();
+
+        document.getElementById('generate').addEventListener('click', () => {
+            currentBlock = generator.generateBlock();
+            const epsilon = parseFloat(document.getElementById('epsilon').value);
+            generator.drawBlock(currentBlock, epsilon);
+        });
+
+        document.getElementById('epsilon').addEventListener('input', (e) => {
+            const epsilon = parseFloat(e.target.value);
+            document.getElementById('epsilonValue').textContent = epsilon.toFixed(1);
+            generator.drawBlock(currentBlock, epsilon);
+        });
+        generator.drawBlock(currentBlock, 1.0);
+    </script>
+</body>
+</html>
