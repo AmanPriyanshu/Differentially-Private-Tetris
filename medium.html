@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Differentially Private Tetris</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/seedrandom/3.0.5/seedrandom.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #1a1a1a;
+            font-family: 'Press Start 2P', cursive;
+            margin: 0;
+            min-height: 100vh;
+            touch-action: manipulation;
+            color: #33ff33;
+        }
+        #game-container {
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        canvas {
+            border: 3px solid #33ff33;
+            background-color: rgba(0, 0, 0, 0.9);
+            box-shadow: 0 0 10px #33ff33;
+            max-width: 100%;
+            max-height: 70vh;
+        }
+        .controls {
+            margin-top: 20px;
+            text-align: center;
+        }
+        .controls p {
+            line-height: 2;
+            font-size: 14px;
+            text-align: center;
+            color: #fff;
+            text-shadow: 0 0 5px #33ff33;
+        }
+
+        .controls span {
+            font-size: 16px;
+            text-shadow: 0 0 5px #33ff33;
+            margin: 0 5px;
+        }
+        .stats {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 10px;
+            text-shadow: 0 0 5px #33ff33;
+            font-size: 18px;
+        }
+        .dp-controls {
+            margin: 20px 0;
+            padding: 15px;
+            background: #2a2a2a;
+            border-radius: 8px;
+            box-shadow: 0 0 10px #ff3333;
+            border: 2px solid #ff3333;
+            color: #ff3333;
+        }
+        .dp-controls label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        #pieceEpsilon {
+            width: 200px;
+        }
+        #mobile-controls {
+            display: none;
+            margin-top: 20px;
+            gap: 10px;
+            touch-action: manipulation;
+        }
+        .control-btn {
+            width: 60px;
+            height: 60px;
+            border: 2px solid #33ff33;
+            box-shadow: 0 0 5px #33ff33;
+            border-radius: 50%;
+            background-color: #2a2a2a;
+            color: #33ff33;
+            font-size: 24px;
+            touch-action: manipulation;
+            font-family: 'Press Start 2P', cursive;
+            opacity: 0.9;
+        }
+        .control-row {
+            display: flex;
+            gap: 10px;
+            margin: 5px;
+        }
+        @media (max-width: 768px) {
+            .mobile-hint {
+                display: block !important;
+                text-shadow: 0 0 5px #ff3333;
+                font-size: 12px;
+            }
+            #mobile-controls {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                position: fixed;
+                bottom: 20px;
+                left: 0;
+                right: 0;
+                background: rgba(0, 0, 0, 0.1);
+                padding: 10px;
+                z-index: 1000;
+            }
+            .controls {
+                display: none;
+            }
+            canvas {
+                max-height: 60vh;
+                margin-bottom: 160px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <div class="stats">
+            <div>Score: <span id="score">0</span></div>
+            <div>Remaining ε: <span id="epsilon">100.0</span></div>
+        </div>
+        <div class="mobile-hint" style="display: none; text-align: center; color: #666; margin: 5px 0;">
+            Tap slider & buttons repeatedly (don't drag the slider, it don't work on phones)
+        </div>
+        <div class="dp-controls">
+            <label>
+                PRIVACY BUDGET <span style="color: #ff3333">&epsilon;</span>
+                <div style="margin: 10px 0;">
+                    <input type="range" id="pieceEpsilon" min="1" max="20" step="1" value="1">
+                    <span id="currentEpsilon" style="margin-left: 10px">1</span>
+                </div>
+            </label>
+        </div>
+
+        <canvas id="tetris" width="240" height="400"></canvas>
+        
+        <div class="controls">
+            <p>CONTROLS:<br>
+                <span style="color: #33ff33">&larr;&rarr;</span> MOVE  
+                <span style="color: #33ff33">&uarr;</span> ROTATE  
+                <span style="color: #33ff33">&darr;</span> DROP  
+            </p>
+        </div>
+        <div id="mobile-controls">
+            <div class="control-row">
+                <button class="control-btn" id="rotate">↺</button>
+            </div>
+            <div class="control-row">
+                <button class="control-btn" id="left">←</button>
+                <button class="control-btn" id="down">↓</button>
+                <button class="control-btn" id="right">→</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('tetris');
+        const context = canvas.getContext('2d');
+        const BLOCK_SIZE = 20;
+        const COLS = canvas.width / BLOCK_SIZE;
+        const ROWS = canvas.height / BLOCK_SIZE;
+        const MAX_EPSILON = 100;
+        const MIN_PIECE_EPSILON = 1.0;
+
+        let remainingEpsilon = MAX_EPSILON;
+        let pieceCount = 0;
+        let gameRunning = true;
+
+        function resizeCanvas() {
+            const container = document.getElementById('game-container');
+            const maxWidth = Math.min(window.innerWidth - 40, 400);
+            const scale = maxWidth / canvas.width;
+            canvas.style.width = `${canvas.width * scale}px`;
+            canvas.style.height = `${canvas.height * scale}px`;
+        }
+
+        const SHAPES = [
+            [[1, 1, 1, 1]], 
+            [[1, 1], [1, 1]], 
+            [[1, 1, 1], [0, 1, 0]], 
+            [[1, 1, 1], [1, 0, 0]], 
+            [[1, 1, 1], [0, 0, 1]],
+            [[1, 1, 0], [0, 1, 1]], 
+            [[0, 1, 1], [1, 1, 0]], 
+        ];
+
+        const COLORS = [
+            '#00ffff',  // Cyan
+            '#ffff00',  // Yellow
+            '#ff00ff',  // Magenta
+            '#ff8800',  // Orange
+            '#3333ff',  // Blue
+            '#33ff33',  // Green
+            '#ff3333',  // Red
+        ];
+
+        let board = Array(ROWS).fill().map(() => Array(COLS).fill(0));
+        let score = 0;
+
+        class Piece {
+            constructor() {
+                this.id = `piece_${pieceCount++}`;
+                this.epsilon = MIN_PIECE_EPSILON;
+                this.spawn();
+            }
+
+            spawn() {
+                const shapeIndex = Math.floor(Math.random() * SHAPES.length);
+                this.shape = SHAPES[shapeIndex];
+                this.color = COLORS[shapeIndex];
+                this.colorIndex = shapeIndex;
+                this.x = Math.floor((COLS - this.shape[0].length) / 2);
+                this.y = 0;
+                
+                this.epsilon = MIN_PIECE_EPSILON;
+                
+                const epsilonSlider = document.getElementById('pieceEpsilon');
+                epsilonSlider.value = MIN_PIECE_EPSILON;
+                document.getElementById('currentEpsilon').textContent = MIN_PIECE_EPSILON.toFixed(1);
+            }
+
+            getSeededRR(value, epsilon, salt) {
+                const seed = `${this.id}_${value}_${epsilon}_${salt}`;
+                const random = new Math.seedrandom(seed)();
+                const p = Math.exp(epsilon) / (1 + Math.exp(epsilon));
+                return random < p ? value : Math.floor(random * 7);
+            }
+
+            moveDown() {
+                this.y++;
+                if (this.collision()) {
+                    this.y--;
+                    if (this.y <= 0) {
+                        gameOver();
+                        return false;
+                    }
+                    this.freeze();
+                    return false;
+                }
+                return true;
+            }
+
+            moveLeft() {
+                this.x--;
+                if (this.collision()) {
+                    this.x++;
+                }
+            }
+
+            moveRight() {
+                this.x++;
+                if (this.collision()) {
+                    this.x--;
+                }
+            }
+
+            rotate() {
+                const newShape = this.shape[0].map((_, i) =>
+                    this.shape.map(row => row[i]).reverse()
+                );
+                const oldShape = this.shape;
+                this.shape = newShape;
+                if (this.collision()) {
+                    this.shape = oldShape;
+                }
+            }
+
+            collision() {
+                for (let y = 0; y < this.shape.length; y++) {
+                    for (let x = 0; x < this.shape[y].length; x++) {
+                        if (this.shape[y][x]) {
+                            const boardX = this.x + x;
+                            const boardY = this.y + y;
+                            
+                            if (boardX < 0 || boardX >= COLS ||
+                                boardY >= ROWS ||
+                                (boardY >= 0 && board[boardY][boardX])) {
+                                if (boardY <= 0) {
+                                    gameOver();
+                                    return true;
+                                }
+                                return true;
+                            }
+                        }
+                    }
+                }
+                return false;
+            }
+
+            freeze() {
+                for (let y = 0; y < this.shape.length; y++) {
+                    for (let x = 0; x < this.shape[y].length; x++) {
+                        if (this.shape[y][x]) {
+                            const boardY = this.y + y;
+                            if (boardY <= 0) {
+                                gameOver();
+                                return;
+                            }
+                            board[boardY][this.x + x] = this.color;
+                        }
+                    }
+                }
+                remainingEpsilon -= this.epsilon;
+                updateUI();
+                this.clearLines();
+                this.spawn();
+            }
+
+            clearLines() {
+                let linesCleared = 0;
+                
+                for (let y = ROWS - 1; y >= 0; y--) {
+                    if (board[y].every(cell => cell)) {
+                        linesCleared++;
+                        board.splice(y, 1);
+                        board.unshift(Array(COLS).fill(0));
+                        y++;
+                    }
+                }
+                
+                if (linesCleared > 0) {
+                    score += linesCleared * 100;
+                    document.getElementById('score').textContent = score;
+                }
+            }
+
+            draw() {
+                for (let y = 0; y < this.shape.length; y++) {
+                    for (let x = 0; x < this.shape[y].length; x++) {
+                        if (this.shape[y][x]) {
+                            const showBlock = this.getSeededRR(1, this.epsilon, `block_${x}_${y}`) === 1;
+                            if (showBlock) {
+                                const noisyColorIdx = this.getSeededRR(
+                                    this.colorIndex,
+                                    this.epsilon,
+                                    `color_${x}_${y}`
+                                );
+                                drawBlock(this.x + x, this.y + y, COLORS[noisyColorIdx]);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        function drawBlock(x, y, color) {
+            context.fillStyle = color;
+            context.fillRect(x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE - 1, BLOCK_SIZE - 1);
+        }
+
+        function drawBoard() {
+            context.clearRect(0, 0, canvas.width, canvas.height);
+            for (let y = 0; y < ROWS; y++) {
+                for (let x = 0; x < COLS; x++) {
+                    if (board[y][x]) {
+                        drawBlock(x, y, board[y][x]);
+                    }
+                }
+            }
+        }
+
+        function gameOver() {
+            gameRunning = false;
+            board = Array(ROWS).fill().map(() => Array(COLS).fill(0));
+            score = 0;
+            remainingEpsilon = MAX_EPSILON;
+            updateUI();
+            alert("Game Over! Refresh to play again.");
+        }
+
+        function updateUI() {
+            document.getElementById('score').textContent = score;
+            document.getElementById('epsilon').textContent = remainingEpsilon.toFixed(1);
+            document.getElementById('currentEpsilon').textContent = piece.epsilon.toFixed(1);
+        }
+
+        let piece = new Piece();
+        let dropCounter = 0;
+        let lastTime = 0;
+        
+        function update(time = 0) {
+            if (!gameRunning) return;
+            
+            const deltaTime = time - lastTime;
+            lastTime = time;
+            dropCounter += deltaTime;
+
+            if (dropCounter > 1000) {
+                piece.moveDown();
+                dropCounter = 0;
+            }
+
+            drawBoard();
+            piece.draw();
+            requestAnimationFrame(update);
+        }
+
+        document.getElementById('pieceEpsilon').addEventListener('input', (e) => {
+            const requestedEpsilon = parseFloat(e.target.value);
+            
+            if (requestedEpsilon < piece.epsilon) {
+                e.target.value = piece.epsilon;
+                return;
+            }
+            
+            if (requestedEpsilon <= remainingEpsilon) {
+                piece.epsilon = requestedEpsilon;
+                updateUI();
+            } else {
+                e.target.value = piece.epsilon;
+            }
+        });
+
+        document.addEventListener('keydown', event => {
+            if (remainingEpsilon <= 0) return;
+            
+            switch (event.keyCode) {
+                case 37: 
+                    piece.moveLeft();
+                    break;
+                case 39: 
+                    piece.moveRight();
+                    break;
+                case 40: 
+                    piece.moveDown();
+                    break;
+                case 38: 
+                    piece.rotate();
+                    break;
+            }
+        });
+
+        document.getElementById('left').addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            if (remainingEpsilon > 0) piece.moveLeft();
+        });
+
+        document.getElementById('right').addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            if (remainingEpsilon > 0) piece.moveRight();
+        });
+
+        document.getElementById('down').addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            if (remainingEpsilon > 0) piece.moveDown();
+        });
+
+        document.getElementById('rotate').addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            if (remainingEpsilon > 0) piece.rotate();
+        });
+
+        document.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+        }, { passive: false });
+
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+        update();
+    </script>
+</body>
+</html>
