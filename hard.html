@@ -229,10 +229,26 @@
             }
 
             getSeededRR(value, epsilon, salt) {
-                const seed = `${this.id}_${value}_${epsilon}_${salt}`;
-                const random = new Math.seedrandom(seed)();
-                const p = Math.exp(epsilon) / (1 + Math.exp(epsilon));
-                return random < p ? value : Math.floor(random * 7);
+                const seed1 = `${this.id}_${value}_${epsilon}_${salt}_first`;
+                const seed2 = `${this.id}_${value}_${epsilon}_${salt}_second`;
+                const random1 = new Math.seedrandom(seed1)();
+                const random2 = new Math.seedrandom(seed2)();
+                if (salt.startsWith('block')) {
+                    const p = (Math.exp(epsilon) - 1) / (Math.exp(epsilon) - 1 + 2);
+                    if (random1 < p) {
+                        return value;  
+                    } else {
+                        return random2 < 0.5 ? 1 : 0;  
+                    }
+                }
+                else if (salt.startsWith('color')) {
+                    const p = (Math.exp(epsilon) - 1) / (Math.exp(epsilon) - 1 + 7);
+                    if (random1 < p) {
+                        return value;  
+                    } else {
+                        return Math.floor(random2 * 7);  
+                    }
+                }
             }
 
             moveDown() {
