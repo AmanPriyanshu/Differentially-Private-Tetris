@@ -405,6 +405,11 @@
         
         function update(time = 0) {
             if (!gameRunning) return;
+
+            if (remainingEpsilon <= 0) {
+                gameOver();
+                return;
+            }
             
             const deltaTime = time - lastTime;
             lastTime = time;
