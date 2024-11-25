@@ -1,4 +1,6 @@
-# Differentially Private Tetris
+# Differentially Private Tetris 👾
+
+![demo-dp-tetris](/assets/tetris_demo.gif)
 
 A unique twist on the classic Tetris game that teaches Differential Privacy (DP) concepts through interactive gameplay. Play Tetris while learning about privacy-preserving data analysis!
 
