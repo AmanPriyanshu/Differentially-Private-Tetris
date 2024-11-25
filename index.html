@@ -444,9 +444,9 @@
                 }
                 for (let y = 0; y < this.gridSize; y++) {
                     for (let x = 0; x < this.gridSize; x++) {
-                        const shouldFill = this.randomizedResponse(grid[y][x], epsilon, `${x}_${y}`);
+                        const shouldFill = this.randomizedResponse(grid[y][x], epsilon/2.0, `${x}_${y}`);
                         if (shouldFill) {
-                            const colorIdx = this.randomizedColor(block.colorIdx, epsilon, `${x}_${y}`);
+                            const colorIdx = this.randomizedColor(block.colorIdx, epsilon/2.0, `${x}_${y}`);
                             this.dpCtx.fillStyle = COLORS[colorIdx];
                             this.dpCtx.fillRect(
                                 x * this.blockSize + 1,
