@@ -370,17 +370,29 @@
             }
 
             randomizedResponse(value, epsilon, salt) {
-                const seed = `block_${this.blockId}_${value}_${epsilon}_${salt}`;
-                const random = new Math.seedrandom(seed)();
-                const p = Math.exp(epsilon) / (1 + Math.exp(epsilon));
-                return random < p ? value : random < 0.5;
+                const seed1 = `block_${this.blockId}_${value}_${epsilon}_${salt}_first`;
+                const seed2 = `block_${this.blockId}_${value}_${epsilon}_${salt}_second`;
+                const random1 = new Math.seedrandom(seed1)();
+                const random2 = new Math.seedrandom(seed2)();
+                const p = (Math.exp(epsilon) - 1) / (Math.exp(epsilon) - 1 + 2);
+                if (random1 < p) {
+                    return value; 
+                } else {
+                    return random2 < 0.5;  
+                }
             }
 
             randomizedColor(colorIdx, epsilon, salt) {
-                const seed = `color_${this.blockId}_${colorIdx}_${epsilon}_${salt}`;
-                const random = new Math.seedrandom(seed)();
-                const p = Math.exp(epsilon) / (1 + Math.exp(epsilon));
-                return random < p ? colorIdx : Math.floor(random * COLORS.length);
+                const seed1 = `color_${this.blockId}_${colorIdx}_${epsilon}_${salt}_first`;
+                const seed2 = `color_${this.blockId}_${colorIdx}_${epsilon}_${salt}_second`;
+                const random1 = new Math.seedrandom(seed1)();
+                const random2 = new Math.seedrandom(seed2)();
+                const p = (Math.exp(epsilon) - 1) / (Math.exp(epsilon) - 1 + 7);
+                if (random1 < p) {
+                    return colorIdx;  
+                } else {
+                    return Math.floor(random2 * COLORS.length);
+                }
             }
 
             drawGrid(ctx) {
