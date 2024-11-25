@@ -353,11 +353,11 @@
                 for (let y = 0; y < this.shape.length; y++) {
                     for (let x = 0; x < this.shape[y].length; x++) {
                         if (this.shape[y][x]) {
-                            const showBlock = this.getSeededRR(1, this.epsilon, `block_${x}_${y}`) === 1;
+                            const showBlock = this.getSeededRR(1, this.epsilon/2.0, `block_${x}_${y}`) === 1;
                             if (showBlock) {
                                 const noisyColorIdx = this.getSeededRR(
                                     this.colorIndex,
-                                    this.epsilon,
+                                    this.epsilon/2.0,
                                     `color_${x}_${y}`
                                 );
                                 drawBlock(this.x + x, this.y + y, COLORS[noisyColorIdx]);
